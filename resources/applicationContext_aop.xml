@@ -1,0 +1,110 @@
+﻿<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:p="http://www.springframework.org/schema/p" 
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc" 
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+	http://www.springframework.org/schema/aop
+	http://www.springframework.org/schema/aop/spring-aop-3.2.xsd
+	http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context-3.2.xsd
+    http://www.springframework.org/schema/tx
+    http://www.springframework.org/schema/tx/spring-tx-3.2.xsd
+    http://www.springframework.org/schema/mvc
+    http://www.springframework.org/schema/mvc/spring-mvc.xsd">
+
+
+	<aop:aspectj-autoproxy />
+	<!-- 读取properties文件的工具 -->
+	<bean
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="location" value="classpath:database.properties"></property>
+	</bean>
+	<!-- 创建spring框架提供的数据源对象 -->
+	<bean name="abc" class="org.apache.commons.dbcp.BasicDataSource">
+		<property name="driverClassName" value="${driver}"></property>
+		<property name="url" value="${url}"></property>
+		<property name="username" value="${user}"></property>
+		<property name="password" value="${password}"></property>
+	</bean>
+	<!-- 使用tomcat配置的数据源 -->
+	<!-- <bean name="abc" class="org.springframework.jndi.JndiObjectFactoryBean"> 
+		<property name="jndiName" value="java:comp/env/easybuy"></property> </bean> -->
+
+	<!-- 创建spring和mybatis整合后用的工厂对象 -->
+	<bean id="fact" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="abc"></property>
+		<property name="configLocation" value="classpath:mybatis-config.xml"></property>
+	</bean>
+	<!-- mapper扫描器，来创建dao接口的实现类 -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="com.xkit.ssm.dao"></property>
+		<property name="sqlSessionFactoryBeanName" value="fact"></property>
+	</bean>
+	<!-- 创建业务层对象 -->
+	<context:component-scan base-package="com.xkit.ssm.service"></context:component-scan>
+
+	<!-- 配置spring的事务 -->
+	<bean name="lxj"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="abc"></property>
+	</bean>
+	<!-- 配置事务的级别 -->
+	<tx:advice id="txAdvice" transaction-manager="lxj">
+		<tx:attributes>
+			<tx:method name="Login" propagation="REQUIRED" />
+			<tx:method name="insert" propagation="REQUIRED" />
+			<tx:method name="*" read-only="true" propagation="SUPPORTS" />
+		</tx:attributes>
+	</tx:advice>
+	<!-- 将切入点和事务组合 -->
+	<aop:config>
+		<aop:pointcut expression="execution(* com.xkit.ssm.service.impl.*.*(..))"
+			id="pc" />
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="pc" />
+	</aop:config>
+
+	<context:component-scan base-package="com.xkit.ssm.controller"></context:component-scan>
+	<!-- 负责将方法与url对应 -->
+	<mvc:annotation-driven>
+		<mvc:message-converters>
+			<bean class="com.alibaba.fastjson.support.spring.FastJsonHttpMessageConverter">
+				<property name="supportedMediaTypes">
+					<list>
+						<value>application/json;charset=utf-8</value>
+						<value>text/plain;charset=utf-8</value>
+					</list>
+				</property>
+				<property name="features">
+					<list>
+						<value>WriteDateUseDateFormat</value>
+					</list>
+				</property>
+			</bean>
+		</mvc:message-converters>
+	</mvc:annotation-driven>
+
+	<!--拦截器-->
+	<mvc:interceptors>
+		<mvc:interceptor>
+		<mvc:mapping path="/**"/>
+		<mvc:exclude-mapping path="/login"/>
+		<bean class="com.xkit.ssm.interceptor.InterceptorTest"/>
+	</mvc:interceptor>
+	</mvc:interceptors>
+
+
+	<!-- 完成视图的对应 -->
+	<!-- 对转向页面的路径解析。prefix：前缀， suffix：后缀 -->
+	<bean
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="prefix" value="/" />
+		<property name="suffix" value=".jsp" />
+	</bean>
+	<mvc:resources location="/js/" mapping="/js/**"/>
+	<mvc:resources location="/css/" mapping="/css/**"/>
+	<mvc:resources location="/images/" mapping="/images/**"/>
+</beans>

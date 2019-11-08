@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xkit.ssm.dao.Easybuy_userDAO">
+
+	<select id="Login" resultType="Easybuy_user">
+	select * from easybuy_user where loginName=#{login} and password=#{pass}
+	</select>
+	
+	<insert id="insert" >
+		INSERT INTO `easybuy_user` (`loginName`,`userName`,`password`,`sex`,`identityCode`,`email`,`mobile`,`type`) 
+		VALUE(#{loginName},#{userName},#{password},#{sex},#{identityCode},#{email},#{mobile},#{type});
+	</insert>
+	<select id="addUserName" resultType="Easybuy_user">
+	select * from easybuy_user
+	</select>
+	<select id="addSelectUser" resultType="java.lang.Integer">
+	SELECT COUNT(*) FROM Easybuy_user WHERE loginname = #{loginName}
+	</select>
+	
+	<select id="selectUser" resultType="Easybuy_user">
+		select userName from easybuy_user
+	</select>
+	
+	<select id="selectUserBypage" resultType="Easybuy_user">
+	SELECT * FROM `easybuy_user`
+		<where>
+			<if test="loginName=null || loginName=''">
+			and loginName like '%${loginName}%'
+			</if>
+			<if test="userName=null || userName=''">
+			and userName like '%${userName}%'
+			</if>
+			<if test="sex=null">
+			and sex=#{sex}
+			</if>
+			<if test="mobile=null || mobile=''">
+			and mobile like '%${mobile}%'
+			</if>
+		</where>
+		limit ${pageIndex},${pageSize}
+	</select>
+	<select id="pageCount" resultType="java.lang.Integer" parameterType="Easybuy_user">
+	SELECT count(*) FROM `easybuy_user`
+		<where>
+			<if test="loginName=null || loginName=''">
+			and loginName like '%${loginName}%'
+			</if>
+			<if test="userName=null || userName=''">
+			and userName like '%${userName}%'
+			</if>
+			<if test="sex=null">
+			and sex=#{sex}
+			</if>
+			<if test="mobile=null || mobile=''">
+			and mobile like '%${mobile}%'
+			</if>
+		</where>
+	</select>
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+</mapper>
